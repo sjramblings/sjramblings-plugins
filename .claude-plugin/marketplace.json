@@ -1,0 +1,12 @@
+{
+  "name": "sjramblings",
+  "description": "Stephen Jones's Claude Code plugins",
+  "owner": { "name": "Stephen Jones", "url": "https://sjramblings.io" },
+  "plugins": [
+    {
+      "name": "motion-studio",
+      "source": "./plugins/motion-studio",
+      "description": "Short explainer clips rendered from code, fact-checked and reviewed before render"
+    }
+  ]
+}

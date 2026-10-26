@@ -1,0 +1,84 @@
+# motion-studio workspace: clips rendered from code. Engine files are replaced on upgrade.
+
+default:
+    @just --list
+
+# render every format of a film at full quality (4 subframes of motion blur)
+render film *args:
+    bun src/render.ts {{film}} {{args}}
+
+# half-size, no motion blur: fast pass for checking pacing
+draft film *args:
+    bun src/render.ts {{film}} --draft {{args}}
+
+# contact sheet, strip, phone sheet, loop check and poster for review
+sheet film *args:
+    bun src/sheet.ts {{film}} {{args}}
+
+# one frame as a PNG
+still film *args:
+    bun src/still.ts {{film}} {{args}}
+
+# the same frames painted twice must hash the same
+determinism film:
+    bun src/determinism.ts {{film}}
+
+# start a new hand-written film from the demo
+new name:
+    @test ! -e films/{{name}} || (echo "films/{{name}} already exists" && exit 1)
+    cp -R films/demo films/{{name}}
+    sed -i.bak 's/name: "demo"/name: "{{name}}"/' films/{{name}}/film.ts && rm films/{{name}}/film.ts.bak
+    @echo "created films/{{name}}: write films/{{name}}/brief.md, then edit film.ts"
+
+# list every AWS explainer clip with its status and the age of its facts
+clips:
+    bun src/clips.ts list
+
+# fail if any explainer's facts were last checked more than this many days ago
+stale days="180":
+    bun src/clips.ts stale {{days}}
+
+# validate every concept clip spec (pass a series code to narrow it)
+concepts *series:
+    bun src/concepts.ts list {{series}}
+
+# how large each concept clip draws its props, smallest first
+fit format="4x5":
+    bun src/concepts.ts fit {{format}}
+
+# render every made explainer clip in one series
+series code *args:
+    for id in $(bun src/clips.ts ids {{code}}); do bun src/render.ts $id {{args}} || exit 1; done
+
+# calls that break the render contract must not appear in the render path
+guard:
+    @out=$(grep -rnE 'Math\.random|Date\.now|setTimeout|setInterval|requestAnimationFrame|performance\.now' src films clips concepts || true); \
+      if [ -n "$out" ]; then echo "render contract broken:"; echo "$out"; exit 1; fi
+
+test:
+    bun test
+
+typecheck:
+    bunx tsc --noEmit
+
+# the gate: run before every commit
+check: guard typecheck test (determinism "demo") concepts
+
+open film format="4x5":
+    open "out/{{film}}/{{format}}.mp4"
+
+# which engine version made this workspace
+version:
+    @cat .motion-studio.json
+
+# list the themes in this workspace and which one is active
+themes:
+    @ls themes/*.ts | xargs -n1 basename | sed "s/\.ts$//"; echo "active: $(grep -o 'DEFAULT = "[^"]*"' brand.ts | cut -d'"' -f2) (override with MOTION_THEME=<name>)"
+
+# frames of real clips in one theme, tiled into out/themes/<theme>/preview_<format>.png
+theme-preview theme *args:
+    MOTION_THEME={{theme}} bun src/theme-preview.ts {{args}}
+
+# text contrast for one theme: fails when a WCAG floor is missed
+theme-check theme:
+    MOTION_THEME={{theme}} bun src/theme-check.ts

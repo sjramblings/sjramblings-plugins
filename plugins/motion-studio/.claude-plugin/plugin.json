@@ -1,0 +1,11 @@
+{
+  "name": "motion-studio",
+  "displayName": "Motion Studio",
+  "version": "0.1.0",
+  "description": "Short explainer clips rendered from code: docs-checked facts, a spec, a reviewed draft, then MP4s in 9x16, 4x5, 1x1 and 16x9 with synthesised sound.",
+  "author": { "name": "Stephen Jones", "url": "https://sjramblings.io" },
+  "homepage": "https://sjramblings.io",
+  "repository": "https://github.com/sjramblings/sjramblings-plugins",
+  "license": "UNLICENSED",
+  "keywords": ["video", "motion", "explainer", "aws", "render"]
+}
